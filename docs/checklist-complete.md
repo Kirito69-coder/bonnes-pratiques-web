@@ -1,7 +1,3 @@
----
-title: "Checklist Bonnes Pratiques Web"
----
-
 # Résumé exécutif
 
 > **Avertissement :** cette checklist fournit des recommandations générales et des exemples techniques. Elle ne constitue pas un avis juridique, de sécurité ou de conformité. Les obligations applicables dépendent du pays, de l’activité, de l’architecture et des données traitées.

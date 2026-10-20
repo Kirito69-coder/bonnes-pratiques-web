@@ -1,0 +1,40 @@
+name: Signalement de bug
+description: Signaler un problème concret dans une recommandation, un exemple ou la checklist.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "Décrivez le bug avec précision : ce qui est faux, depuis quand, et pourquoi."
+  - type: input
+    id: contexte
+    attributes:
+      label: Contexte
+      description: Pavé de contexte (type de projet, technologie, pays).
+      placeholder: "ex. application PHP/MySQL en France, API publique"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description du problème
+      description: Ce qu’indique le bug, documentation ou recommandation concernée.
+      placeholder: "ex. la section CORS recommande une origine fixe sans mentionner la gestion des sous-domaines."
+    validations:
+      required: true
+  - type: textarea
+    id: attente
+    attributes:
+      label: Résultat attendu
+      description: Ce qu’une correction devrait produire.
+      placeholder: "ex. ajouter une note sur les sous-domaines et un exemple de configuration."
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: Références
+      description: Liens officiels ou sources qui étayent le signalement.
+      placeholder: "ex. https://developer.mozilla.org/fr/docs/Web/HTTP/CORS"
+    validations:
+      required: false

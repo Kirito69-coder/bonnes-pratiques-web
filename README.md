@@ -1,10 +1,6 @@
----
-title: "Bonnes pratiques Web"
----
-
 # Bonnes pratiques Web
 
-Checklist pragmatique pour améliorer la **fiabilité**, la **sécurité**, la **performance**, l’**accessibilité** et la **maintenabilité** des sites et applications web.
+Checklist francophone, vérifiable et réutilisable pour sécuriser et préparer des projets Web à la production — lisible par les humains et exploitable par les assistants IA.
 
 > Cette documentation est une base de travail communautaire. Elle ne constitue pas un avis juridique, un audit de sécurité ni une garantie de conformité. Adaptez chaque recommandation à votre pays, votre activité, votre architecture et vos données.
 
@@ -13,6 +9,7 @@ Checklist pragmatique pour améliorer la **fiabilité**, la **sécurité**, la *
 - [Checklist complète](docs/checklist-complete.md) : recommandations détaillées, exemples et critères de vérification.
 - [Checklist courte](docs/checklist-courte.md) : contrôle rapide avant mise en production.
 - [Workflow de déploiement](docs/workflow-deploiement.md) : séquence générique de validation et de mise en ligne.
+- [Documentations d’intégration IA](docs/integrations.md) : instructions pour charger la skill dans OpenCode, Claude Code, Codex et outils compatibles SKILL.md.
 
 Les sujets couverts incluent notamment la performance, l’UX, la sécurité applicative, les secrets, l’authentification, les paiements, le RGPD, l’accessibilité, le SEO, les sauvegardes, les tests et la supervision.
 
@@ -28,17 +25,38 @@ Ce dépôt s’adresse aux développeurs, équipes produit, freelances et petite
 4. Notez les décisions, exceptions et risques propres à votre contexte.
 5. Réévaluez la checklist à chaque évolution importante de l’application.
 
-## Principes éditoriaux
+## Exemples d’usage
 
-- Les exemples sont volontairement génériques et doivent être testés avant utilisation.
-- Aucun secret réel, identifiant ou donnée personnelle ne doit être ajouté au dépôt.
-- Les recommandations juridiques doivent être vérifiées avec une source officielle ou un professionnel compétent.
-- Une checklist ne remplace pas un audit, des tests automatisés ou une revue humaine.
+Ce projet supporte trois usages principaux :
+
+- un développeur utilise la checklist pour auditer son projet ;
+- une équipe transforme les points en critères d’acceptation ou tickets ;
+- un assistant IA charge une compétence ciblée pour appliquer ces règles pendant une revue ou une implémentation.
+
+Les sujets RGPD, paiements et sécurité sont présentés comme des aides à la vérification, pas comme une certification.
 
 ## Contribuer
 
-Les corrections, précisions, traductions et nouveaux exemples sont bienvenus. Consultez [CONTRIBUTING.md](CONTRIBUTING.md) avant d’ouvrir une issue ou une pull request.
+Les corrections, précisions, traductions et nouveaux exemples sont bienvenus. Consultez [CONTRIBUTING.md](CONTRIBUTING.md) avant d’ouvrir une issue ou une pull request. Voir aussi les issues ouvertes avec les labels `good first issue`, `documentation`, `security`, `accessibility`, `french`, `agent-skill` et `help wanted`.
+
+## Agent Skill
+
+Ce dépôt contient une skill compatible avec le format Agent Skills pour OpenCode et les outils qui supportent `SKILL.md`.
+
+Installation exemple :
+
+```bash
+mkdir -p skills/web-best-practices
+cp docs/integrations.md skills/web-best-practices/ 2>/dev/null || true
+# La SKILL.md principale est fournie dans ce dépôt.
+```
+
+Voir [docs/integrations.md](docs/integrations.md) pour les commandes d’installation propres à chaque outil.
 
 ## Licence
 
 Le contenu documentaire est distribué sous licence [Creative Commons Attribution 4.0 International](LICENSE). Voir le fichier de licence pour les détails.
+
+## Utilisé par / Intégrations IA
+
+Cette section est mise à jour dès qu’un premier utilisateur ou projet confirme l’utilisation de la checklist ou de la skill.

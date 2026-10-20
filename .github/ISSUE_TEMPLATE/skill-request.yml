@@ -1,0 +1,40 @@
+name: Demande de compétence IA
+description: Demander une nouvelle skill ou signaler une lacune dans une skill existante pour un assistant IA.
+title: "[Compétence IA] "
+labels: ["agent-skill"]
+body:
+  - type: markdown
+    attributes:
+      value: "Utilisez ce formulaire pour signaler une lacune dans une skill existante ou demander une nouvelle skill, avec comme priorité la précision et la sécurité."
+  - type: input
+    id: agent
+    attributes:
+      label: Outil concerné
+      description: Outil ou format auquel la skill s’applique (OpenCode, Claude Code, Codex, autre).
+      placeholder: "ex. OpenCode"
+    validations:
+      required: true
+  - type: textarea
+    id: besoin
+    attributes:
+      label: Besoin
+      description: Ce que la skill devrait faire, le type de projet concerné et le périmètre.
+      placeholder: "ex. aider à auditer un projet PHP/MySQL avant mise en production."
+    validations:
+      required: true
+  - type: textarea
+    id: attente
+    attributes:
+      label: Résultat attendu
+      description: Ce qu’une solution correcte devrait produire, avec exemple de sortie idéale si possible.
+      placeholder: "ex. une sortie listant les fichiers concernés, les lignes et une priorité P0/P1/P2."
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: Références
+      description: Liens vers les documents ou comportements que la skill devrait respecter.
+      placeholder: "ex. https://agentskills.io/specification"
+    validations:
+      required: false

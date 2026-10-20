@@ -1,0 +1,40 @@
+name: Amélioration
+description: Proposer une amélioration ou un ajout non urgent à la checklist, la documentation ou les exemples.
+title: "[Amélioration] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: "Toute amélioration doit être accompagnée de contexte, d’un résultat attendu et, si possible, d’une référence."
+  - type: input
+    id: contexte
+    attributes:
+      label: Contexte
+      description: Pavé de contexte (type de projet, technologie, pays).
+      placeholder: "ex. check-list utilisée par une équipe PHP/MySQL"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Amélioration proposée
+      description: Ce qui manque, serait utile ou pourrait être clarifié.
+      placeholder: "ex. ajouter une référence WCAG 2.2 pour la section contraste."
+    validations:
+      required: true
+  - type: textarea
+    id: attente
+    attributes:
+      label: Résultat attendu
+      description: Ce que la contribution devrait produire (si applicable).
+      placeholder: "ex. ajouter un lien officiel et un critère de vérification."
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: Références
+      description: Liens vers des spécifications, guides officiels ou discussions du projet.
+      placeholder: "ex. https://www.w3.org/TR/WCAG22/"
+    validations:
+      required: false
