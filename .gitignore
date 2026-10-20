@@ -1,0 +1,18 @@
+# Secrets et configuration locale
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+
+# Systèmes et éditeurs
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Fichiers temporaires
+*.log
+*.tmp
+~*
