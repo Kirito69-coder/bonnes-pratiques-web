@@ -44,6 +44,6 @@ Ce Code de conduite est adapté du Contributor Covenant, version 2.1, disponible
 https://www.contributor-covenant.org/version/2/1/code_of_conduct.html
 
 Les réponses types aux violations courantes du code de conduite peuvent être consultées sur la page suivante :
-https://www.contributor-covenant.org/version/2/1/faq
+https://www.contributor-covenant.org/faq
 
 Traduction adaptée de la version anglaise du Contributor Covenant v2.1.

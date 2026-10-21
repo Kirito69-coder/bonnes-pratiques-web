@@ -42,7 +42,9 @@ jobs:
         with:
           # Tous les fichiers Markdown du dépôt (forme de glob recommandée).
           # Retries pour absorber les indisponibilités momentanées de sites tiers.
-          args: --verbose --no-progress --exclude-mail --max-retries 3 --retry-wait-time 5 './**/*.md'
+          # --exclude cnil.fr : protection anti-robots qui bloque les vérifications
+          # automatisées (503 systématique), le lien est valide en navigation.
+          args: --verbose --no-progress --max-retries 3 --retry-wait-time 5 --exclude '^https://www\.cnil\.fr/' './**/*.md'
           # L'échec d'un lien casse la CI ; la sortie du job reste consultable.
           fail: true
           # Token GitHub pour limiter les rate limits sur les liens github.com.

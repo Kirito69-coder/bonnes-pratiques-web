@@ -65,7 +65,7 @@ Cette référence liste les points d’accessibilité à vérifier lors d’une 
 ## Références
 
 - WCAG 2.2 : https://www.w3.org/TR/WCAG22/
-- RGAA 4.1 : https://www.numerique.gouv.fr/services/rgaa/
+- RGAA 4.1 : https://accessibilite.numerique.gouv.fr/
 - Comprendre le WCAG (W3C, traductions) : https://www.w3.org/WAI/WCAG22/Understanding/
 
 ## Notes
