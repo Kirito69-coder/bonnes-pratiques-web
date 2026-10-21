@@ -24,8 +24,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Changed
 
 - README: explicit references to the OWASP Developer Guide (current) alongside the archived OWASP Secure Coding Practices Quick Reference Guide v2.1, and to RGAA 4/WCAG 2.2.
-- `docs/checklist-complete.md` §9: P0–P3 priorities now have operational definitions (trigger + examples + decision rule).
+- `docs/checklist-complete.md` §11: P0–P3 priorities now have operational definitions (trigger + examples + decision rule).
 - `docs/checklist-complete.md` §3 and §5: OWASP and RGAA citations added.
+- `docs/checklist-complete.md`: new §6 “SEO (référencement naturel)” (8 items: titles/meta, robots.txt & sitemap, canonical, URLs & 301, internal linking, JS-free content, search tracking, Open Graph) and new §7 “Internationalisation” (8 items: UTF-8 end-to-end, `lang`, externalized strings, complete translations, localized formats, language selector, hreflang, RTL/long-text readiness); subsequent sections renumbered (former §6–§9 are now §8–§11).
+- `docs/checklist-complete.md`: ~40 new checklist items across performance (Core Web Vitals, budget, modern images, compression, async third-party scripts, font loading), security (HTTP security headers, HttpOnly token storage, secure uploads, default accounts removal), privacy (minimisation & retention, erasure implementation, 72-hour breach notification, records of processing), accessibility (modals & focus trap, ARIA live regions, reduced motion & touch targets, skip link, captions & transcripts), and tests (E2E critical journeys, CI checks, mobile & slow-network verification).
 - Skill references rewritten in French for consistency with the rest of the repository.
 - `docs/integrations.md`: corrected OpenCode global skills path (`~/.config/opencode/skills/`), added Cursor and GitHub Copilot integration instructions, linked community skill indexes.
 

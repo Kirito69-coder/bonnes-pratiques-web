@@ -88,7 +88,41 @@ Ce document est une **checklist détaillée et structurée** de bonnes pratiques
   *Description :* Garder en mémoire (Redis, Memcached, fichiers) ce qui ne change pas souvent (métadonnées, filtres). *Pourquoi :* Diminuer hits DB. *Actions :* Par ex. stocker le schéma d’un formulaire en cache. Utiliser l’en-tête HTTP `ETag` ou `Last-Modified` pour que le navigateur ne re-télécharge pas si inchangé. *Critères :* Présence de cache, tests reflétant changement (ex. modifier données -> nouvelle version servie). *Métriques :* Taux de cache hit, nombre de requêtes DB par minute.
 
 - **Surveiller la disponibilité et les performances du site**.  
-  *Description :* Utiliser un outil de monitoring (Pingdom, UptimeRobot, Datadog) pour détecter les pannes ou lenteurs. *Pourquoi :* Réagir rapidement en cas d’incident. *Actions :* Configurer alertes (e-mail/SMS) sur indisponibilité (>5 minutes) ou dépassement de latence. *Critères :* Alertes fonctionnelles, logs de monitoring accessibles. *Métriques :* Taux de disponibilité (uptime), temps de réponse moyen.
+  *Description :* Utiliser un outil de monitoring (Pingdom, UptimeRobot, Datadog) pour détecter les pannes ou lenteurs. *Pourquoi :* Réagir rapidement en cas d’incident. *Actions :* Configurer alertes (e-mail/SMS) sur indisponibilité (>5 minutes) ou dépassement de latence. *Critères :* Alertes fonctionnelles, logs de monitoring accessibles. *Métriques :* Taux de disponibilité (uptime), temps de réponse moyen.
+
+- **Mesurer et respecter les Core Web Vitals**.  
+  *Description :* Vérifier les trois métriques d’expérience utilisateur de Google sur les pages critiques : **LCP** (chargement) ≤ 2,5 s, **INP** (interactivité) ≤ 200 ms, **CLS** (stabilité visuelle) < 0,1 — seuils « bons » sur mobile. *Pourquoi :* Ce sont les métriques mesurées par le CrUX de Google et corrélées à la perception de qualité (et au référencement). *Actions :* Mesurer avec Lighthouse / PageSpeed Insights / WebPageTest sur mobile ; corriger le plus gros élément visible (LCP : image hero prioritaire, serveur lent), les tâches JS longues (INP), les images/ads sans dimensions réservées (CLS). *Critères :* Les 3 métriques dans le vert sur les pages critiques. *Métriques :* Valeurs LCP/INP/CLS mesurées, évolutions avant/après chaque optimisation.
+
+  - *Si site vitrine :* mesurer la page d’accueil et la page contact/rendez-vous.  
+  - *Sinon si SaaS/application :* mesurer les écrans de connexion et le tableau de bord.  
+  - *Si API publique :* non applicable aux réponses JSON, mais le TTFB des endpoints servis par une page web reste pertinent.
+
+- **Définir un budget de performance**.  
+  *Description :* Fixer un poids maximal de page (par ex. < 500 Ko chargées pour une vitrine, < 1,5 Mo pour une application riche) et le tenir. *Pourquoi :* Sans budget, chaque nouvelle librairie ou image « un peu lourde » finit par dégrader le site de façon invisible. *Actions :* Mesurer le poids actuel (DevTools → Network), le comparer au budget, et ajouter un contrôle en CI (par ex. `bundlesize`, Lighthouse CI) qui échoue si le budget est dépassé. *Critères :* Budget écrit et respecté à chaque release. *Métriques :* Poids total par page, évolution dans le temps, nombre de dépassements bloqués en CI.
+
+- **Servir des images modernes et adaptatives**.  
+  *Description :* Utiliser des formats efficaces (WebP ou AVIF avec repli via `<picture>`) et servir la bonne résolution selon l’écran. *Pourquoi :* L’image est souvent le premier poste de poids d’une page ; un JPEG non optimisé peut coûter plusieurs secondes de LCP. *Actions :* Générer des variantes et utiliser `srcset`/`sizes` ; poser `width`/`height` (ou `aspect-ratio`) sur chaque `<img>` pour éviter les décalages de mise en page (CLS) ; `loading="lazy"` sur les images hors premier écran (**pas** sur l’image hero) ; dimensionner l’image à sa taille d’affichage (servir 2000 px dans un conteneur de 400 px gaspille bande passante). Exemple :  
+  ```html
+  <img src="photo-400.avif" width="400" height="300" loading="lazy"
+       srcset="photo-400.avif 400w, photo-800.avif 800w"
+       sizes="(max-width: 600px) 100vw, 400px"
+       alt="Description de la photo">
+  ```  
+  *Critères :* Aucune image sans dimensions ; images du premier écran en format moderne et dimensionnées justes. *Métriques :* Poids moyen des pages, LCP, CLS avant/après.
+
+- **Activer la compression et les protocoles modernes**.  
+  *Description :* Compresser les réponses textuelles (Brotli ou à défaut Gzip) et servir en HTTP/2 (ou HTTP/3) quand l’hébergement le permet. *Pourquoi :* HTML, CSS et JS compressés pèsent 3 à 5 fois moins ; HTTP/2 permet de multiplexer les requêtes sur une seule connexion. *Actions :* Activer la compression côté serveur (mod `mod_deflate` Apache, `gzip`/`brotli` Nginx, réglage CDN) et vérifier avec `curl -H "Accept-Encoding: br" -I https://votresite.fr` ; confirmer le protocole dans DevTools (onglet Network → colonne Protocol). *Critères :* Réponses textuelles compressées (en-tête `Content-Encoding`), site servi en h2/h3. *Métriques :* Taille transférée avant/après, temps de chargement.
+
+- **Charger les scripts tiers sans bloquer et précharger les ressources critiques**.  
+  *Description :* Empêcher les librairies externes (analytics, widgets, publicité) de bloquer l’affichage, et prévenir les allers-retours réseau vers les origines tierces. *Pourquoi :* Un script tiers synchronisé au `<head>` gèle le rendu jusqu’à son téléchargement (souvent le principal coupable d’un LCP dégradé). *Actions :* Utiliser `defer` (ou `async` si indépendant) sur les `<script>` ; `preconnect`/`dns-prefetch` vers les origines essentielles ; `preload` réservé aux ressources du chemin critique (image hero, CSS critique) — sans en abuser. Exemple :  
+  ```html
+  <link rel="preconnect" href="https://cdn.example.com">
+  <script src="analytics.js" defer></script>
+  ```  
+  *Critères :* Aucun `<script>` bloquant non différé hors critical path ; pas de `preload` superflu (alertes DevTools). *Métriques :* TTFB du rendu, LCP, nombre de requêtes bloquantes.
+
+- **Optimiser le chargement des polices web**.  
+  *Description :* Limiter le nombre de polices et de graisses chargées, et éviter que leur téléchargement n’efface ou ne bloque le texte. *Pourquoi :* Les polices sont souvent le plus gros actif d’une page ; sans `font-display`, le navigateur masque le texte pendant le téléchargement (FOIT). *Actions :* Préférer WOFF2, limiter à 2 familles et aux graisses réellement utilisées, définir `font-display: swap` (ou `optional`), héberger les polices en local ou sur un domaine dédié avec `font-display` + `preload` de la variante principale. *Critères :* `font-display` présent sur chaque `@font-face` ; ≤ 2 familles chargées. *Métriques :* Poids des polices, CLS dû aux bascules de texte, LCP.
 
 # 2. Design et Identité visuelle
 
@@ -237,7 +271,37 @@ Ce document est une **checklist détaillée et structurée** de bonnes pratiques
   *Description :* Ne jamais exposer de clé secrète (ex. AWS secret, Stripe secret) dans le JavaScript ou HTML. *Pourquoi :* Une clé secrète exposée permettrait l’usurpation d’identité. *Actions :* Utiliser seulement les clés publiques côté client. Toutes les opérations sensibles passent par votre serveur. *Critères :* Revoir le code front-end pour s’assurer que seules les *public keys* y figurent. *Métriques :* Aucun secret trouvé dans le code du navigateur (outil de dev ou grep).
 
 - **Mises à jour des dépendances**.  
-  *Description :* Maintenir à jour librairies et frameworks (PHP, JS, etc.). *Pourquoi :* Bénéficier des correctifs de sécurité. *Actions :* Utiliser `composer update` et `npm update` régulièrement. Scanner les vulnérabilités (ex. `composer audit`, `npm audit`). *Critères :* Aucun package obsolète critique (selon `composer outdated`). *Métriques :* Rapport d’audit de sécurité (ex. Snyk).
+  *Description :* Maintenir à jour librairies et frameworks (PHP, JS, etc.). *Pourquoi :* Bénéficier des correctifs de sécurité. *Actions :* Utiliser `composer update` et `npm update` régulièrement. Scanner les vulnérabilités (ex. `composer audit`, `npm audit`). *Critères :* Aucun package obsolète critique (selon `composer outdated`). *Métriques :* Rapport d’audit de sécurité (ex. Snyk).
+
+- **En-têtes de sécurité HTTP**.  
+  *Description :* Configurer au niveau serveur/reverse-proxy les en-têtes qui restreignent ce que le navigateur autorise : **CSP** (`Content-Security-Policy`, principale défense contre les XSS), **HSTS** (`Strict-Transport-Security`, force HTTPS), **X-Content-Type-Options: nosniff**, **X-Frame-Options** ou `frame-ancestors` (anti-clickjacking), **Referrer-Policy** (évite la fuite de paramètres d’URL), **Permissions-Policy** (caméra, micro, géolocalisation). *Pourquoi :* Sans ces en-têtes, une injection ou un clic détourné n’est contenu par rien côté navigateur — et la CSP se révèle souvent le seul moyen de limiter une XSS existante. *Actions :* Exemple Nginx :  
+  ```nginx
+  add_header X-Content-Type-Options "nosniff" always;
+  add_header X-Frame-Options "SAMEORIGIN" always;
+  add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+  add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+  add_header Content-Security-Policy "default-src 'self'; img-src 'self' data:; script-src 'self'" always;
+  ```  
+  Tester avec l’onglet Security de DevTools ou https://securityheaders.com ; durcir la CSP progressivement en mode `Content-Security-Report-Only` avant de la rendre bloquante. *Critères :* Les 6 en-têtes présents et cohérents sur toutes les pages ; CSP sans `unsafe-inline` pour les scripts (ou justification). *Métriques :* En-têtes vérifiés en CI (`curl -I`), violations CSP remontées dans les rapports.
+
+  - *Si hébergement mutualisé sans accès config :* privilégier les en-têtes ajoutables via `.htaccess` (mod_headers) ou le CDN/pare-feu applicatif (WAF).  
+  - *Si application JavaScript derrière CDN :* la CSP doit lister explicitement les origines des scripts et APIs tierces réellement utilisées.
+
+- **Tokens d’authentification côté client : cookie HttpOnly, jamais `localStorage`**.  
+  *Description :* Stocker les jetons de session/connexion dans un cookie `HttpOnly; Secure; SameSite` plutôt que dans `localStorage`/`sessionStorage`. *Pourquoi :* tout ce qui est en `localStorage` est lisible par le moindre script exécuté sur la page : en cas de XSS, le jeton est volé silencieusement ; un cookie `HttpOnly` ne l’est pas. *Actions :* Vérifier que le backend renvoie les tokens en cookie (`Set-Cookie` avec `HttpOnly`) et que le front ne fait pas `localStorage.setItem('token', …)`. *Critères :* Aucun token d’auth dans le stockage local/session ; cookie marqué HttpOnly + Secure + SameSite. *Métriques :* Inspection du stockage navigateur après connexion, balayage grep sur `localStorage`.
+
+- **Uploads de fichiers sécurisés**.  
+  *Description :* Contrôler type, extension, taille et destination de tout fichier téléversé par un utilisateur. *Pourquoi :* un upload non contrôlé permet l’exécution de code (`.php` déposé dans la racine web), le déni de service (fichier géant) ou le stockage de contenus illicites. *Actions :* Vérifier le type côté serveur via le contenu réel (`finfo` en PHP), pas seulement l’extension ; renommer le fichier à l’acceptation ; le stocker **hors de la racine web**, servi par un script qui contrôle les droits ; limiter la taille (`upload_max_filesize`) et rejeter les extensions exécutables. Exemple :  
+  ```php
+  $finfo = new finfo(FILEINFO_MIME_TYPE);
+  $mime = $finfo->file($_FILES['fichier']['tmp_name']);
+  $autorises = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'application/pdf' => 'pdf'];
+  if (!isset($autorises[$mime])) { exit("Type de fichier non autorisé."); }
+  ```  
+  *Critères :* Aucun fichier utilisateur exécutable accessible publiquement ; type vérifié sur le contenu. *Métriques :* Nombre d’uploads rejetés, scan antivirus/contenu si pertinent.
+
+- **Supprimer les comptes, mots de passe et réglages par défaut**.  
+  *Description :* Éliminer avant mise en ligne tout compte d’administration par défaut, mot de passe standard, utilisateur de démonstration ou réglage de configuration « usine » connu publiquement. *Pourquoi :* les paires admin/admin et les comptes de démo sont les premières tentées lors d’un scan automatisé ; un réglage par défaut (répertoire d’installation résiduel, interface d’admin exposée) se trouve en quelques secondes. *Actions :* Lister les comptes existants (`SELECT username FROM users;`), désactiver/supprimer les comptes démo, changer tous les mots de passe d’installation, supprimer les fichiers/dossiers d’installation résiduels (`install/`, `phpmyadmin/`), restreindre l’accès à l’admin (IP, 2FA). *Critères :* Aucun compte inconnu ni mot de passe par défaut ; interface d’administration non joignable depuis l’extérieur sans authentification. *Métriques :* Écarts relevés lors de la vérification pré-mise en ligne, comptes actifs listés.
 
 # 4. Obligations légales et confidentialité
 
@@ -274,7 +338,28 @@ Ce document est une **checklist détaillée et structurée** de bonnes pratiques
   *Description :* Rendre les contenus lisibles par des robots ou IA (ex. assistant vocal). *Pourquoi :* Améliorer le SEO et l’accessibilité générale. *Actions :* Documenter l’API, fournir un sitemap XML, garder le HTML sémantique (titres `<h1>`, listes `<ul>`, `<table>` avec `<th>`). *Critères :* Un sitemap existe, le HTML est propre. *Métriques :* Score de référencement, indexation par Google.
 
 - **Exemptions selon pays / projet**.  
-  *Si France/EU (ou pays non précisé)* : se conformer RGPD/CNIL (pages requises mentionnées ci-dessus). *Si USA ou autre* : adapter aux lois locales (ex. CCPA pour Californie, COPPA si enfants). Toujours mentionner que le pays n’est pas spécifié dans la politique (ex. « site US en cours de vérification légale »). *Si marketplace ou SaaS aux USA* : inclure politique de remboursements et conditions de service (exigences PCI pour paiements). *Si API publique* : proposer (ou non) une politique d’API usage/limitations, disclaimer pour usage des données.
+  *Si France/EU (ou pays non précisé)* : se conformer RGPD/CNIL (pages requises mentionnées ci-dessus). *Si USA ou autre* : adapter aux lois locales (ex. CCPA pour Californie, COPPA si enfants). Toujours mentionner que le pays n’est pas spécifié dans la politique (ex. « site US en cours de vérification légale »). *Si marketplace ou SaaS aux USA* : inclure politique de remboursements et conditions de service (exigences PCI pour paiements). *Si API publique* : proposer (ou non) une politique d’API usage/limitations, disclaimer pour usage des données.
+
+- **Minimisation et durées de conservation**.  
+  *Description :* Ne collecter que les données strictement nécessaires à la finalité déclarée (art. 5-1-c du RGPD) et fixer une durée de conservation par catégorie de données, appliquée en pratique. *Pourquoi :* La durée indéfinie est la première criticité relevée lors d’un contrôle CNIL ; conserver des données sans besoin augmente le coût d’une éventuelle violation. *Actions :* Lister les données collectées et leurs finalités ; pour chaque catégorie, écrire la durée (ex. « compte inactif supprimé après 3 ans », « commandes conservées 10 ans pour obligation comptable ») ; implémenter expiration ou anonymisation (cron, tâche planifiée). *Critères :* Chaque donnée collectée a une finalité et une durée documentées ; un mécanisme technique applique ces durées. *Métriques :* Nombre de catégories de données sans durée définie (cible : 0), volume de données purgées.
+
+  - *Si base légale = consentement :* le consentement a une durée de vie limitée et un mécanisme de renouvellement.  
+  - *Si SaaS/marketplace :* distinguer les durées contractuelles (facturation), marketing (consentement) et légales (comptabilité).
+
+- **Droit à l’effacement réellement implémenté**.  
+  *Description :* S’assurer qu’une demande de suppression de compte ou de données se traduit bien par la suppression (ou l’anonymisation) effective des données concernées — y compris dans les copies secondaires (bases de test, sauvegardes, exports). *Pourquoi :* documenter un droit dans la politique sans le faire fonctionner est une faute ; l’article 17 impose une réponse « sans retard injustifié » (1 mois au maximum, art. 12-3). *Actions :* Traçer la demande (formulaire ou email dédié), définir ce qui est supprimé, ce qui reste par obligation légale (factures) et comment, indiquer les sauvegardes ; tester le parcours complet : demander → vérifier que le compte ne se reconnecte plus → vérifier les tables. *Critères :* Un parcours de suppression documenté, testé, avec délai de réponse maîtrisé. *Métriques :* Délai moyen de traitement des demandes, nombre de demandes traitées dans le délai.
+
+- **Notification de violation de données sous 72 heures**.  
+  *Description :* Disposer d’une procédure écrite de notification des violations de données personnelles à la CNIL (et, si risque élevé, aux personnes concernées) dans les 72 heures après prise de connaissance (art. 33 RGPD). *Pourquoi :* ce délai est légal et court ; improviser en pleine incident conduit à le dépasser, ce qui est sanctionné indépendamment de la gravité réelle de la violation. *Actions :* Écrire la procédure : qui détecte, qui décide de la notifiableté, qui remplit le formulaire de la CNIL, où sont les contacts (CNIL, DPO, hébergeur) ; préparer à l’avance la liste des mesures de sécurité (art. 33-1-d) ; faire un exercice de simulation annuel. *Critères :* Procédure écrite, contacts à jour, testée au moins une fois. *Métriques :* Temps réel entre détection et notification lors des simulations (cible : < 24 h pour laisser marge aux 72 h).
+
+  - *Si responsable de traitement :* obligation pleine et entière.  
+  - *Si sous-traitant (art. 28) :* notifier le responsable de traitement « sans délai indû » — le délai contractuel doit être écrit avec le client.
+
+- **Registre des traitements et mesures de sécurité documentées**.  
+  *Description :* Tenir le registre des traitements exigé par l’art. 30 RGPD (qui traite quoi, pour quelle finalité, quels destinataires, quels transferts, combien de temps) et documenter les mesures de sécurité de l’art. 32 (chiffrement, contrôle d’accès, pseudonymisation quand pertinent). *Pourquoi :* c’est la première pièce demandée lors d’un contrôle ; sans lui, impossible de répondre à une demande d’accès ou d’évaluer ses propres risques. *Actions :* Modèle de registre sur le site de la CNIL ; le tenir à jour à chaque nouveau traitement ; y rattacher la politique de confidentialité pour que les deux restent cohérents. *Critères :* Registre existant, à jour, cohérent avec la politique publiée. *Métriques :* Dernière date de mise à jour, nombre de traitements recensés vs recensés réels.
+
+  - *Si petit site/vitrine sans données sensibles :* le registre est allégé mais recommandé.  
+  - *Si données de santé, de mineurs ou de geolocalisation :* traitements à risque → analyser l’impact (DPIA, art. 35) avec un professionnel.
 
 # 5. Accessibilité
 
@@ -311,9 +396,111 @@ Ce document est une **checklist détaillée et structurée** de bonnes pratiques
   *Description :* Viser la conformité WCAG 2.2 niveau AA (international) et, pour les sites publics ou français, le **RGAA 4.1** (référentiel français, aligné sur les WCAG). Les critères RGAA applicables incluent : 1.2 (contraste), 3.2 (titres), 4.1 (alternatives aux images), 6.1 (liens), 8.3 (formulaires), 11.1 (scripts). *Pourquoi :* Normes d’accessibilité recommandées internationalement (WCAG) et exigées légalement en France pour le secteur public (RGAA). *Actions :* Contrôler la conformité via des outils (ex. axe, Asqatas) **et** un audit manuel — un audit automatisé ne prouve pas la conformité. *Critères :* 0 erreur critique d’accessibilité ; pour le RGAA : taux de conformité mesuré selon la méthode officielle (échantillon de pages). *Métriques :* Score WCAG (axe) et taux de conformité RGAA si applicable. *Limite :* seule une référence par un professionnel ou un audit complet permet d’affirmer une conformité.
 
 - **Contenus intelligibles par IA**.  
-  *Description :* Structurer le contenu (JSON-LD pour données, sitemaps) pour que les moteurs/assistants l’interprètent. *Pourquoi :* Améliorer SEO et accès aux données publiques. *Actions :* Ajouter un sitemap.xml à la racine, structurer les données (schema.org) pour le produit, l’article, etc. *Critères :* Google Search Console valide le sitemap. *Métriques :* Présence des rich snippets dans les résultats de recherche.
+  *Description :* Structurer le contenu (JSON-LD pour données, sitemaps) pour que les moteurs/assistants l’interprètent. *Pourquoi :* Améliorer SEO et accès aux données publiques. *Actions :* Ajouter un sitemap.xml à la racine, structurer les données (schema.org) pour le produit, l’article, etc. *Critères :* Google Search Console valide le sitemap. *Métriques :* Présence des rich snippets dans les résultats de recherche.
 
-# 6. Mise en production
+- **Piège de focus et gestion des fenêtres modales**.  
+  *Description :* Dans une modale ou un menu déroulant, confiner le focus à l’intérieur, le restituer au bouton déclencheur à la fermeture, et permettre la fermeture avec la touche Échap. *Pourquoi :* sans cela, un utilisateur au clavier ou au lecteur d’écran poursuit sa tabulation « derrière » la fenêtre invisible et se retrouve bloqué. *Actions :* Écouter `keydown` (Échap) et `Tab` (boucle de focus) ; utiliser `inert` ou `aria-modal="true"` ; rendre le fond non focalisable. *Critères :* Test au clavier : on ne sort jamais d’une modale ouverte, et le focus revient au déclencheur. *Métriques :* Modales testées au clavier / modales totales.
+
+- **Mises à jour dynamiques annoncées (régions ARIA)**.  
+  *Description :* Annoncer aux lecteurs d’écran les changements de contenu qui n’impliquent pas de rechargement (ajout au panier, résultat de filtre, message de succès) via des régions `role="status"` / `aria-live="polite"` et `role="alert"` pour les erreurs. *Pourquoi :* un utilisateur de lecteur d’écran reste sur un écran qui a visiblement changé sans que rien ne soit dit — il croit la page cassée. *Actions :* Placer une région live persistante ; y injecter le message (« Article ajouté au panier »). Exemple :  
+  ```html
+  <div id="retour" role="status" aria-live="polite"></div>
+  ```  
+  *Critères :* Chaque action dynamique importante produit une annonce audible/annoncée. *Métriques :* Actions dynamiques sans annonce (cible : 0 sur les parcours critiques).
+
+- **Respect des préférences utilisateur (mouvement réduit, cibles, zoom)**.  
+  *Description :* Adapter l’interface aux réglages système : animations réduites avec `prefers-reduced-motion`, aucune animation clignotant plus de 3 fois par seconde (risque de crise), cibles tactiles ≥ 44×44 px (WCAG 2.5.8), zoom jusqu’à 200 % sans perte de contenu, jamais de `user-scalable=no` dans le viewport. *Pourquoi :* ces critères concernent les personnes sensibles au mouvement, les malvoyants zoomant fortement et les utilisateurs mobiles ; ils sont aussi des critères WCAG 2.2 AA et RGAA. *Actions :* Médias queries CSS :  
+  ```css
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+  ```  
+  Contrôler `<meta name="viewport" content="width=device-width, initial-scale=1">` (sans `maximum-scale=1` ni `user-scalable=no`), la taille des boutons et l’absence de `overflow: hidden` global bloquant le zoom. *Critères :* 0 élément clignotant ; cibles ≥ 44 px ; zoom 200 % fonctionnel. *Métriques :* Audit axe/WCAG sur ces critères, taille moyenne des cibles.
+
+- **Lien d’évitement et ordre de tabulation logique**.  
+  *Description :* Fournir un premier lien « Aller au contenu principal » et s’assurer que l’ordre de tabulation suit l’ordre visuel, sans élément focalisable hors écran ni atteignable seulement par la souris. *Pourquoi :* sur les pages avec un en-tête riche (menu, recherche, réseaux sociaux), chaque visiteur clavier refait le parcours du menu à chaque page ; l’ordre de tabulation incohérent désoriente. *Actions :* Lier le lien d’évitement au `<main>` avec un `id` ; vérifier avec Tab seul ; utiliser `tabindex` **positif** uniquement si contraint (et le questionner), jamais sur des éléments normaux. *Critères :* Le lien d’évitement est le premier élément focalisable ; la tabulation suit la lecture visuelle. *Métriques :* Nombre de tabulations avant d’atteindre le contenu principal (< 2).
+
+- **Sous-titres et transcriptions pour les médias**.  
+  *Description :* Fournir des sous-titres synchronisés aux vidéos avec parole et une transcription aux contenus audio/vidéo. *Pourquoi :* sans transcription, le contenu sonore est inaccessible aux personnes sourdes/malentendantes (et souvent illisible en environnement bruyant ou sans son) ; c’est un critère RGAA (8.x) et WCAG. *Actions :* Sous-titres VTT alignés (`<track kind="captions">`) — génération automatique **à relire**, transcription dans la page ou en téléchargement. *Critères :* Toutes les vidéos parlées ont des sous-titres relus ; les audios ont une transcription. *Métriques :* Médias sans sous-titre (cible : 0).
+
+# 6. SEO (référencement naturel)
+
+- **Balises `title` et `meta description` uniques et pertinentes**.  
+  *Description :* Chaque page indexable a un `<title>` unique (≈ 50–60 caractères) incluant le mot-clé principal et le nom du site, et une `meta description` unique (≈ 150–160 caractères) qui donne envie de cliquer. *Pourquoi :* ce sont les deux éléments les plus visibles dans les résultats de recherche ; dupliqués ou vides (« Page d’accueil »), ils sont remplacés automatiquement par Google au détriment du taux de clic. *Actions :* Vérifier l’unicité (liste des titles dans le crawl : `site:votresite.fr`), les rendre dynamiques côté template ; ne pas bourrer de mots-clés. *Critères :* 0 doublon de title/description ; chaque page stratégique a les siens. *Métriques :* Nombre de titles/descriptions dupliqués ou tronqués, taux de clic moyen dans la Search Console.
+
+- **`robots.txt` et `sitemap.xml` cohérents**.  
+  *Description :* Un `robots.txt` qui n’interdit pas par erreur les ressources nécessaires ni le sitemap, et un `sitemap.xml` à jour qui ne contient que des URL indexables (status 200, sans paramètres d’unicité, sans pages noindex). *Pourquoi :* un `Disallow: /` mal placé (ou un CDN mal configuré) efface le site des résultats ; un sitemap avec des URL mortes gaspille le budget de crawl. *Actions :*  
+  ```text
+  User-agent: *
+  Allow: /
+  Disallow: /admin/
+  Sitemap: https://votresite.fr/sitemap.xml
+  ```  
+  Vérifier dans Google Search Console (outil robots.txt, soumission du sitemap). *Critères :* Robots.txt testé sans erreur ; sitemap soumis et sans URL en erreur. *Métriques :* Pages explorées/crawlées, erreurs d’indexation dans la Search Console.
+
+  - *Si site vitrine / statique :* générer le sitemap à chaque build.  
+  - *Si application dynamique :* le régénérer à chaque ajout/suppression de contenu.  
+  - *Ne jamais* bloquer les fichiers CSS/JS dans robots.txt : Google doit pouvoir rendre la page.
+
+- **Balises canoniques contre le contenu dupliqué**.  
+  *Description :* Une balise `<link rel="canonical">` par page qui pointe vers l’URL d’indexation préférée, y compris sur les variantes (paramètres de tri/filtre, versions `www`/sans, `http`/`https`). *Pourquoi :* le même contenu servi sur plusieurs URL divise la popularité des liens et Google choisit parfois la mauvaise version à indexer. *Actions :* Poser la canonical côté serveur/template ; sur les paramètres non structurants, ajouter `rel="canonical"` ou l’exclusion dans la Search Console ; éviter les pages filtrées indexables sans valeur. *Critères :* Chaque page indexable a une canonical auto-référente (sauf cas de duplication volontaire type paginée). *Métriques :* URL « non canoniques » détectées dans la Search Console.
+
+- **URLs lisibles, stables et redirections 301**.  
+  *Description :* URL courtes, en minuscules, avec des tirets, sans paramètres d’identifiant inutiles ; toute URL changée ou supprimée redirigée en **301** vers l’URL équivalente la plus proche — jamais vers la page d’accueil en bloc. *Pourquoi :* des URLs stables évitent de perdre le référencement acquis ; une redirection 301 transfère l’essentiel de la valeur ; un cycle de redirections ou un maillage de 404 cassé dégrade l’expérience et le crawl. *Actions :* Changer d’URL = 301 (`.htaccess`, framework ou CDN) ; tenir un tableau URL ancienne → nouvelle ; surveiller les 404 dans la Search Console et corriger les liens internes pointant dessus. *Critères :* Aucune redirection en chaîne (> 1 hop) ni boucle ; 404 internes corrigés. *Métriques :* Nombre de 404, longueur moyenne des chaînes de redirection.
+
+- **Maillage interne avec ancres descriptives**.  
+  *Description :* Lier les pages entre elles avec des liens dont le texte d’ancre décrit réellement la page cible (« guide RGPD pour e-commerce », pas « cliquez ici »). *Pourquoi :* les liens internes transmettent la popularité et le contexte sémantique aux pages cibles ; un site en silo mal relié laisse ses meilleures pages sans poids. *Actions :* Lister les pages stratégiques et leurs liens entrants ; ajouter depuis les pages à fort trafic vers les pages à convertir ; vérifier qu’aucune page importante n’est à plus de 3 clics de l’accueil. *Critères :* Toutes les pages stratégiques ont des liens entrants internes ; ancres explicites. *Métriques :* Profondeur de clic, nombre de liens entrants internes par page clé.
+
+- **Contenu accessible aux robots (sans JavaScript indispensable)**.  
+  *Description :* S’assurer que le contenu critique (titres, texte, liens, prix de base) existe dans le HTML servi, pas seulement après exécution d’un JavaScript lourd. *Pourquoi :* Googlebot exécute le JS mais avec des délais et des limites ; les assistants IA et autres crawlers ne l’exécutent souvent pas du tout — un contenu rendu uniquement en client est invisible pour eux. *Actions :* Privilégier le rendu côté serveur (SSR) ou la génération statique (SSG) pour les pages de contenu ; en SPA, prévoir un repli (prérendu, HTML minimal) ; comparer le HTML brut (Ctrl+U) avec l’affiché. *Critères :* Le HTML brut contient titres, texte principal et liens de navigation. *Métriques :* Différences HTML brut vs rendu sur les pages stratégiques.
+
+- **Suivi et diagnostic du référencement**.  
+  *Description :* Connecter la Search Console (et Analytics si utilisé) dès la mise en ligne et suivre indexation, positions et erreurs. *Pourquoi :* sans mesure, aucun SEO n’est vérifiable ; une désindexation ou une chute de trafic doit être visible en jours, pas en mois. *Actions :* Vérifier la propriété (balise DNS/HTML), soumettre le sitemap, suivre le rapport « Couverture » et « Expériences pages » ; analyser périodiquement les requêtes qui amènent du trafic. *Critères :* Propriété vérifiée, sitemap soumis, alertes configurées. *Métriques :* Pages indexées, clics/positions dans la Search Console, Core Web Vitals du champ.
+
+  - *Si site vitrine :* suivi mensuel suffit.  
+  - *Si marketplace/SaaS avec contenu public :* suivi hebdomadaire + alerte sur les chutes d’indexation.
+
+- **Open Graph et Twitter Card**.  
+  *Description :* Balises `og:title`, `og:description`, `og:image` (et équivalents `twitter:*`) pour contrôler l’aperçu du lien quand il est partagé (réseaux sociaux, messageries). *Pourquoi :* sans ces balises, la carte de partage affiche une image quelconque ou rien, ce qui réduit fortement le taux de clic des partages. *Actions :* Poser les balises dans le `<head>` ; image aux dimensions recommandées (1200×630) ; tester avec le débogueur d’aperçus de chaque plateforme. *Critères :* Aperçu correct et identique à l’image voulue sur au moins deux plateformes testées. *Métriques :* Taux de clic des partages (si mesuré).
+
+# 7. Internationalisation (i18n)
+
+- **Encodage UTF-8 de bout en bout**.  
+  *Description :* Tout le chaîne de traitement des caractères doit être en UTF-8 : `<meta charset="utf-8">` en premier dans le `<head>`, connexion et tables de la base en `utf8mb4` (MySQL), en-têtes HTTP (`Content-Type: text/html; charset=utf-8`), fichiers de code en UTF-8. *Pourquoi :* un encodage hétérogène produit les fameuses grues (« Ã© » au lieu de « é »), casse les caractères accentués, emojis et alphabets non latins, et peut corrompre des données à l’écriture en base. *Actions :* Vérifier les trois points ci-dessus ; en PHP : `PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"` ; convertir les anciennes tables si besoin. *Critères :* Aucun caractère cassé à l’écran ni en base (test avec émojis, « œ », « à ç é »). *Métriques :* Nombre de « mojibake » détectés (revue ou script de scan).
+
+- **Attribut `lang` exact sur chaque page**.  
+  *Description :* Déclarer la langue réelle du contenu dans `<html lang="fr">` (et `xml:lang` si XHTML), avec un code de langue BCP 47 valide (`fr`, `fr-FR`, `en`). *Pourquoi :* les lecteurs d’écran utilisent cette déclaration pour choisir leur synthèse vocale — un `lang` absent ou faux rend la page illisible au son ; les moteurs l’utilisent aussi pour éviter les erreurs d’indexation (critère RGAA 8.1 / WCAG 3.1.1). *Actions :* Poser `lang` sur le template racine ; si le contenu mélange les langues (ex. citation en anglais), marquer les passages par `lang` sur l’élément. *Critères :* `lang` présent, valide et cohérent avec le contenu visible. *Métriques :* Pages sans `lang` (cible : 0), résultats d’audit RGAA critère 8.1.
+
+- **Textes externalisés (pas de chaînes en dur)**.  
+  *Description :* Regrouper toutes les chaînes affichées dans des fichiers de traduction (ex. `fr.php`, `en.php`, JSON i18n) plutôt que de les éparpiller dans le code. *Pourquoi :* chaque texte en dur dans le code rend toute future traduction coûteuse ; c’est aussi la garantie de ne pas afficher un message d’erreur technique brut à l’utilisateur. *Actions :* Fonction de traduction (`__('bonjour')`) ; un fichier par langue ; lister les textes visibles avec grep pour repérer les chaînes en dur résiduelles (`grep -r "echo \"" app/`). *Critères :* Aucune phrase affichée directement en dur dans le code applicatif. *Métriques :* Nombre de chaînes traduites vs textes visibles relevés en revue.
+
+  - *Si projet monolingue définitif :* la structure par fichier de langue se prépare quand même, le coût initial est faible.  
+  - *Si marketplace/SaaS multilingue :* obligation de passer par des fichiers de traduction dès le départ.
+
+- **Traductions complètes et relues**.  
+  *Description :* Quand plusieurs langues sont proposées, chaque langue doit être intégralement traduite (interface, emails, pages légales, messages d’erreur) et relue par un locuteur natif — sans mélange de langues ni texte traduit automatiquement sans relecture. *Pourquoi :* une interface à moitié traduite (bouton en anglais, erreur en français) décrédibilise plus qu’une page en une seule langue ; les emails transactionnels mal traduits font fuir les clients. *Actions :* Tableau de couverture des clés par langue (script qui compare les clés présentes dans `fr` et `en`) ; relecture humaine ; marquer explicitement les chaînes non traduites plutôt que d’afficher des clés brutes. *Critères :* 100 % des clés présentes dans toutes les langues proposées ; relecture effectuée. *Métriques :* Taux de couverture des clés, signalements d’utilisateurs sur les textes.
+
+- **Formats localisés (dates, nombres, devises)**.  
+  *Description :* Afficher dates, nombres, tailles et montants selon les conventions de la langue/du pays : `31/12/2026` vs `12/31/2026`, `1 234,56 €` vs `€1,234.56`, devise correcte, fuseaux horaires explicites. *Pourquoi :* un montant ambigu (`12.50` = 12,50 ou 12 50 ?) ou une date inversée provoque des erreurs de paiement et de confiance ; les montants sont juridiquement sensibles. *Actions :* utiliser les fonctions de localisation plutôt que `date()` ou `number_format()` en dur : PHP `IntlFormatter`/`NumberFormatter`, JS `Intl.NumberFormat`/`Intl.DateTimeFormat`. Exemple JS :  
+  ```js
+  new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(1234.5);
+  // → 1 234,50 €
+  ```  
+  *Critères :* Aucun format de date/nombre en dur dans l’affichage ; devise et séparateurs cohérents avec la langue. *Métriques :* Nombre de formats codés en dur détectés, erreurs support liées aux formats.
+
+- **Sélecteur de langue et mémoire de choix**.  
+  *Description :* Proposer un moyen explicite de changer de langue (si plusieurs), mémoriser le choix (cookie, préférence de compte) et s’appuyer sur la détection (`Accept-Language`) sans imposer la détection automatique sans retour possible. *Pourquoi :* une langue imposée et non modifiable ferme la porte aux visiteurs ; la persistance évite de rechoisir à chaque page. *Actions :* Lister les langues disponibles dans l’en-tête ; comparer avec `Accept-Language` pour le premier visit ; stocker le choix ; prévoir une page 404/erreur dans la langue de l’utilisateur. *Critères :* Le changement de langue est accessible depuis chaque page ; le choix persiste. *Métriques :* Taux d’utilisation du sélecteur, taux de rebond par langue.
+
+- **`hreflang` pour les versions linguistiques**.  
+  *Description :* Sur un site multilingue, déclarer les équivalents de chaque page dans les autres langues avec `<link rel="alternate" hreflang="…">` (ou sitemap hreflang), avec retour réciproque et une langue par défaut `x-default`. *Pourquoi :* sans hreflang, Google affiche parfois la mauvaise langue dans les résultats ; les internautes atterrissent sur une page qu’ils ne comprennent pas. *Actions :* Écrire les paires/réseau d’alternates (chaque page listant toutes les autres, y compris elle-même) ; valider dans la Search Console. *Critères :* Déclarations réciproques, aucun code de langue invalide, `x-default` présent. *Métriques :* Erreurs hreflang dans la Search Console (cible : 0).
+
+  - *Si monolingue :* non applicable.  
+  - *Si une seule langue mais marchés différents (ex. France/Québec) :* distincts par `fr` et `fr-CA` seulement si le contenu diffère réellement.
+
+- **Prévoir l’extension à d’autres langues (textes longs, RTL, polices)**.  
+  *Description :* Concevoir l’interface pour qu’elle supporte d’autres langues sans casse : textes plus longs (l’allemand ≈ +30 %), traductions plus courtes, écritures droite-à-gauche (arabe, hébreu), alphabets différents et polices qui les couvrent. *Pourquoi :* un design calibré sur le français en dur (boutons à largeur fixe, colonnes étroites) explose au premier ajout de langue — et l’incohérence visuelle décourage les relances. *Actions :* Éviter les largeurs fixes sur les textes, utiliser `min-width` + troncature maîtrisée ; pour le RTL, préférer `dir="auto"` et les propriétés CSS logiques (`margin-inline-start` plutôt que `margin-left`) ; vérifier le rendu avec `lang="de"` et `dir="rtl"` en devtools. *Critères :* Mise en page intacte avec un texte long et avec `dir="rtl"`. *Métriques :* Nombre d’éléments cassés lors des tests de langue longue/RTL.
+
+# 8. Mise en production
 
 - **Nom de domaine personnalisé**.  
   *Description :* Héberger le site sur votre domaine propre (ex. `www.monsite.com`). *Pourquoi :* Professionnalisme, SEO et cookies valides. *Actions :* Acheter domaine, configurer DNS A/AAAA vers serveur/IP. *Critères :* `curl -I http://votredomaine` retourne le site en front. *Métriques :* Temps de propagation DNS, Alexa rank.
@@ -359,7 +546,7 @@ Ce document est une **checklist détaillée et structurée** de bonnes pratiques
 - **Supprimer le mode debug/verbeux**.  
   *Description :* En production, ne pas afficher les erreurs détaillées (stack traces). *Pourquoi :* Fuites d’informations sensibles. *Actions :* PHP `display_errors=Off`, Laravel: `APP_DEBUG=false`. *Critères :* En cas d’erreur, utilisateur voit message générique (“Une erreur est survenue”) et l’admin log complet. *Métriques :* Aucune info sensible dans les réponses 5xx.
 
-# 7. Tests
+# 9. Tests
 
 - **Tests de charge (load testing)**.  
   *Description :* Évaluer la capacité de l’infrastructure sous haute charge (outsser). *Pourquoi :* Trouver le goulet d’étranglement (CPU, mémoire). *Actions :* Outils : ApacheBench, `siege`, JMeter. Exemple :  
@@ -388,9 +575,18 @@ Ce document est une **checklist détaillée et structurée** de bonnes pratiques
   *Description :* Tester la gestion d’entrées trop longues (ex. nom à 1000 chars). *Pourquoi :* Prévenir injections ou crash (buffer overflow). *Actions :* Soumettre via devtools un champ énorme. *Critères :* Serveur renvoie erreur contrôlée (p. ex. code 400) et n’écrase pas la DB. *Métriques :* Logs d’erreurs, validation de schéma (UTF8 safe).
 
 - **Test des permissions de fichiers**.  
-  *Description :* Vérifier que les fichiers uploadés (si public) n’exécutent pas de code. *Pourquoi :* Sécurité. *Actions :* Restreindre dossier uploads en non exécutable (Apache `Options -ExecCGI`). *Critères :* Un fichier `.php` uploadé dans `uploads/` ne doit pas être exécuté. *Métriques :* Aucune exécution PHP depuis uploads (test manuel).
+  *Description :* Vérifier que les fichiers uploadés (si public) n’exécutent pas de code. *Pourquoi :* Sécurité. *Actions :* Restreindre dossier uploads en non exécutable (Apache `Options -ExecCGI`). *Critères :* Un fichier `.php` uploadé dans `uploads/` ne doit pas être exécuté. *Métriques :* Aucune exécution PHP depuis uploads (test manuel).
 
-# 8. Surveillance (Monitoring)
+- **Tests E2E des parcours critiques**.  
+  *Description :* Automatiser de bout en bout les parcours qui portent le revenu ou l’usage principal : inscription → connexion, ajout au panier → paiement, envoi de formulaire → réception de l’email, publication de contenu. *Pourquoi :* les tests unitaires testent des fonctions, pas des parcours ; c’est au niveau des parcours que se cachent les régressions les plus coûteuses (un bouton de paiement qui ne se déclenche plus, un formulaire qui ne valide plus). *Actions :* Un scénario par parcours critique avec Playwright/Cypress (ou Selenium), exécuté sur la version de staging à chaque release ; assertions sur le résultat visible (« Merci de votre commande »), pas seulement sur l’absence d’erreur JS. *Critères :* Chaque parcours critique a au moins un test E2E vert sur la release. *Métriques :* Couverture des parcours critiques, taux d’échec des E2E en CI.
+
+- **Exécution automatique des contrôles en CI à chaque changement**.  
+  *Description :* Faire tourner tests, linters, contrôles de dépendances et audit de sécurité automatiquement sur chaque *commit* ou *pull request*, avec un merge impossible tant que la CI est rouge. *Pourquoi :* un test qui n’est exécuté « de temps en temps » ne protège de rien ; c’est l’exécution systématique qui empêche la régression de rejoindre la branche principale. *Actions :* Pipeline (GitHub Actions, GitLab CI, etc.) : lint → tests unitaires → E2E → `npm audit`/`composer audit` → échec du build si budget de performance dépassé ; garder la CI rapide (< 10 min) pour qu’elle soit respectée. *Critères :* Aucun merge avec CI rouge ; couverture minimale tenue. *Métriques :* Pourcentage de builds avec CI exécutée, temps moyen de la CI, régressions bloquées.
+
+- **Vérification sur mobile et réseaux lents**.  
+  *Description :* Tester les parcours critiques dans une fenêtre de taille téléphone (≈ 375 px) et avec la simulation de réseau lent/3G des DevTools, pas uniquement sur un grand écran en fibre. *Pourquoi :* la majorité du trafic public vient du mobile ; un formulaire utilisable uniquement sur desktop, ou qui met 15 s en 4G dégradée, perd la majeure partie de sa conversion — les bugs de débordement horizontal et de modales hors écran n’apparaissent qu’à cette taille. *Actions :* Mode responsive des DevTools + throttling (« Slow 4G ») ; tester le scroll, les cibles tactiles et la saisie (clavier qui recouvre le champ) ; si possible, un passage sur un vrai appareil pour les écrans critiques. *Critères :* Parcours critiques réalisables au doigt, sans défilement horizontal, sur réseau lent simulé. *Métriques :* Taux de conversion mobile vs desktop (signal indirect), erreurs trouvées par session de test mobile.
+
+# 10. Surveillance (Monitoring)
 
 - **Détection d’interruption de service**.  
   *Description :* Être alerté en cas de downtime (ping, connexion DB, HTTP). *Pourquoi :* Réagir rapidement (SLA). *Actions :* Configurer Pingdom/UptimeRobot pour tester un URL toutes les 5 min. *Critères :* En cas de downtime, notification immédiate. *Métriques :* Temps de rétablissement, nombre de pannes (should be minimal).
@@ -413,7 +609,7 @@ Ce document est une **checklist détaillée et structurée** de bonnes pratiques
 - **Alertes personnalisées**.  
   *Description :* Automatiser les alertes en cas d’anomalies (p. ex. trop d’erreurs 5xx sur un endpoint). *Pourquoi :* Action rapide avant crash total. *Actions :* Sur Datadog/NewRelic, définir une alerte sur le ratio d’erreurs. *Critères :* Recevoir un e-mail/Slack quand le seuil est dépassé. *Métriques :* Temps moyen entre l’erreur et l’alerte.
 
-# 9. Priorisation (P0–P3) par projet
+# 11. Priorisation (P0–P3) par projet
 
 Nous classons chaque tâche en **priorité** P0–P3. Chaque niveau a une **sémantique opérationnelle** : il déclenche une action particulière, pas seulement un étiquetage.
 
@@ -432,8 +628,8 @@ L’ordre varie selon le projet :
 |:--------:|:-------------------------:|:---------------------:|:--------------------------------:|:--------------:|:------------------:|:-------------:|
 | **P0**   | Sécurité/Intégrité        | Authentification, autorisations, protection paiements, validation serveur. HTTPS, mots de passe hachés. | Même + vérification multi-acteurs (guide vs client), commission. Obligations KYC/Paiement. | SSL, aucune info perso collectée (si formulaire). | Auth renforcée (2FA?), conformité PCI, RGPD (données clients). | API keys OAuth/JWT, quotas, pas de CORS sauvage. |
 | **P1**   | Fiabilité / Backend       | Gestion des erreurs, sauvegardes/restauration testées, logs, rate limit, index sur DB, pagination. | Comme ci-dessus + disponibilité 24/7 (marketplace clé). | Basic (pages statiques chargent vite). *Hébergement fiable*. | High-availability, backup DB, double paiement bloqué, fiabilité paiement. | Uptime API critique, mises à jour versionnées. |
-| **P2**   | Performance / Accessibilité | Cache (APCu, HTTP), compression gzip, contraste WCAG, navigation clavier, alt text. | De même + optimisation filtres recherche, responsive. | Optimization SEO/temps de chargement, ARIA où nécessaire. | Performance élastique (autoscaling), tableau de bord usage (UI accessible). | Documentation API (Swagger), code example, CORS configuré. |
-| **P3**   | Finitions / Lancement     | Favicon, nom de domaine, pages légales finales (CGU, CGV, cookies), tests multi-navigateurs, suppression de mentions “demo”. | Graphismes finaux, pages tuto (guide usage), UI/UX revue. | SEO (sitemap, robots.txt), design complet, alternatives de contenu (langues?). | Page d’accueil soignée, support client (FAQ, mail), branding complet. | Portail développeur, exemples de requêtes, support (GitHub issues). |
+| **P2**   | Performance / Accessibilité | Cache (APCu, HTTP), compression gzip, contraste WCAG, navigation clavier, alt text. | De même + optimisation filtres recherche, responsive. | Optimisation SEO (title, sitemap, canonical) et temps de chargement, contraste et navigation clavier. | Performance élastique (autoscaling), tableau de bord usage (UI accessible). | Documentation API (Swagger), code example, CORS configuré. |
+| **P3**   | Finitions / Lancement     | Favicon, nom de domaine, pages légales finales (CGU, CGV, cookies), tests multi-navigateurs, suppression de mentions “demo”. | Graphismes finaux, pages tuto (guide usage), UI/UX revue. | Design complet, Open Graph, contenus multilingues optionnels. | Page d’accueil soignée, support client (FAQ, mail), branding complet. | Portail développeur, exemples de requêtes, support (GitHub issues). |
 
 ## Tableaux comparatifs
 
@@ -450,6 +646,10 @@ L’ordre varie selon le projet :
 | Configuration DB optimisée (index) | P1       | Réduction du temps de requête.         |
 | Gestion erreurs utilisateur            | P1       | UX améliorée, éviter blocage.         |
 | Limitations requêtes / taux API  | P1       | Prévenir surcharge et abus.           |
+| Tests E2E des parcours critiques | P1       | Détecte les régressions de parcours (paiement, connexion) avant la release. |
+| Internationalisation (UTF-8, `lang`, formats) | P1 | Intégrité des caractères, base de toute traduction et du SEO multilingue. |
+| Exécution des tests en CI à chaque changement | P1 | Empêche la régression d’atteindre la branche principale. |
+| SEO on-page (title, canonical, sitemap) | P2   | Visibilité et indexation correctes.   |
 | Compression / cache                    | P2       | Optimisation performance (mise en cache). |
 | Accessibilité (WCAG contrast)   | P2       | Conformité légale et confort.         |
 | Mobile/responsive design               | P2       | Expérience utilisateur homogène.       |
@@ -529,6 +729,15 @@ timeline
 - [ ] Vérifier la navigation clavier et le focus visible sur tous les éléments.
 - [ ] Tester l'accessibilité avec un outil (axe, Wave).
 - [ ] Planifier les tests de charge et de montée en charge.
+- [ ] Configurer les en-têtes de sécurité HTTP (CSP, HSTS, nosniff, X-Frame-Options, Referrer-Policy).
+- [ ] Stocker les tokens d’authentification en cookie HttpOnly (jamais en localStorage).
+- [ ] Supprimer les comptes, mots de passe et réglages par défaut.
+- [ ] Mettre en place la notification de violation de données sous 72 h (procédure écrite, contacts à jour).
+- [ ] Exécuter tests et linters en CI à chaque commit/PR (merge bloqué si la CI est rouge).
+- [ ] Automatiser un test E2E par parcours critique (connexion, paiement, formulaire).
+- [ ] Vérifier l’UTF-8 de bout en bout et l’attribut `lang` de chaque page.
+- [ ] Mesurer les Core Web Vitals sur les pages critiques (LCP ≤ 2,5 s, INP ≤ 200 ms, CLS < 0,1).
+- [ ] Renseigner `title` et `meta description` uniques, `sitemap.xml` et `robots.txt` cohérents.
 - [ ] Mettre en place une surveillance (uptime, alertes erreurs).
 - [ ] Mettre en place l'envoi d'alertes en cas de crash ou d’erreurs 500 importantes.
 - [ ] Prévoir la journalisation des erreurs utilisateur (pour analyser les incidents).

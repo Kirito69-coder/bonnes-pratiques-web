@@ -26,7 +26,7 @@ Ce dépôt est une **checklist francophone de préparation à la production web*
 Pour auditer un projet web avec ce dépôt :
 
 1. Suivre la procédure de `skills/web-best-practices/SKILL.md` (7 étapes).
-2. Classer les risques **P0–P3** selon les définitions de `docs/checklist-complete.md` §9.
+2. Classer les risques **P0–P3** selon les définitions de `docs/checklist-complete.md` §11.
 3. Attribuer à chaque point une disposition : `Conforme` / `Non conforme` / `Bloqué` / `Non applicable`.
 4. Citer une preuve (`fichier:ligne` ou commande) pour tout `Conforme` ou `Non conforme`. Sans preuve → `Bloqué`.
 5. Produire le rapport selon le modèle de la SKILL.md (ou `docs/modele-audit.md`).

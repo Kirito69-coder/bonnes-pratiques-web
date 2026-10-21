@@ -23,7 +23,7 @@ Skill de revue de projets Web : sécurité, accessibilité, performance, vie pri
 3. **Distinguer les faits des suppositions** :
    - *Fait* = vérifié dans un fichier ou une commande, avec citation `fichier:ligne`.
    - *Supposition* = déduction non vérifiable depuis le dépôt, à marquer explicitement comme telle.
-4. **Classer chaque constat en P0 / P1 / P2 / P3** selon les définitions du projet (voir `docs/checklist-complete.md` §9) :
+4. **Classer chaque constat en P0 / P1 / P2 / P3** selon les définitions du projet (voir `docs/checklist-complete.md` §11) :
    - **P0** : critique (bloquant mise en production) — sécurité, intégrité des données, conformité de base.
    - **P1** : fiabilité — erreurs, sauvegardes, performance de base, accessibilité minimale.
    - **P2** : optimisation — cache, accessibilité complète, SEO de base.

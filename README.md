@@ -11,7 +11,7 @@ Checklist francophone, vérifiable et réutilisable pour sécuriser et préparer
 - [Workflow de déploiement](docs/workflow-deploiement.md) : séquence générique de validation et de mise en ligne.
 - [Documentations d’intégration IA](docs/integrations.md) : instructions pour charger la skill dans OpenCode, Claude Code, Codex et outils compatibles SKILL.md.
 
-Les sujets couverts incluent notamment la performance, l’UX, la sécurité applicative, les secrets, l’authentification, les paiements, le RGPD, l’accessibilité, le SEO, les sauvegardes, les tests et la supervision.
+Les sujets couverts incluent notamment la performance, l’UX, la sécurité applicative, les secrets, l’authentification, les paiements, le RGPD, l’accessibilité, le SEO, l’internationalisation, les sauvegardes, les tests et la supervision.
 
 ## Public visé
 
