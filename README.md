@@ -17,6 +17,26 @@ Les sujets couverts incluent notamment la performance, l’UX, la sécurité app
 
 Ce dépôt s’adresse aux développeurs, équipes produit, freelances et petites équipes qui souhaitent disposer d’une checklist réutilisable pour des projets PHP/MySQL, sites vitrines, marketplaces, SaaS ou API publiques.
 
+## Positionnement
+
+Il existe déjà d’excellentes checklists web. Ce dépôt ne cherche pas à les remplacer : il se positionne comme **alternative francophone pragmatique et complémentaire**.
+
+| Projet | Rapport à ce dépôt |
+|--------|--------------------|
+| [Front-End Checklist](https://github.com/thedaviddias/Front-End-Checklist) (thedaviddias) | Référence pour la qualité front-end (HTML, CSS, JS, a11y, SEO, perf) en anglais, avec site web et serveur MCP. **À utiliser en complément** pour le détail front-end. |
+| [Production Readiness Checklist](https://github.com/MarinJursic/production-readiness-checklist) (MarinJursic) | Référence « go/no-go » industrielle (contrôles dits *evidence-driven*, scanner CLI). Beaucoup plus lourde ; ce dépôt en emprunte la philosophie des preuves et de la décision finale, à l’échelle d’une petite équipe. |
+| [OWASP Developer Guide](https://owasp.org/www-project-developer-guide/) | Source de référence pour la section sécurité (successeur du *Secure Coding Practices Quick Reference Guide*, désormais archivé). |
+| [RGAA 4](https://www.numerique.gouv.fr/services/rgaa/) et WCAG 2.2 | Références d’accessibilité. Le RGAA est la norme de référence pour les sites publics français ; ce dépôt les cite sans s’y substituer. |
+
+**Ce qui distingue ce dépôt :**
+
+- français en priorité, approche pédagogique ;
+- couverture PHP/MySQL, marketplace, SaaS, API et paiements ;
+- [checklist courte](docs/checklist-courte.md) directement utilisable avant mise en production ;
+- critères de vérification concrets ( Description / Pourquoi / Actions / Critères / Métriques ) ;
+- compatibilité Agent Skills pour les assistants IA ;
+- recommandations accompagnées de limites et d’avertissements (pas de certification).
+
 ## Utilisation
 
 1. Parcourez la [checklist complète](docs/checklist-complete.md).

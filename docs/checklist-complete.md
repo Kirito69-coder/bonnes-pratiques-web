@@ -127,6 +127,8 @@ Ce document est une **checklist détaillée et structurée** de bonnes pratiques
 
 # 3. Sécurité et intégrité
 
+> **Références :** cette section s’appuie sur l’[OWASP Developer Guide](https://owasp.org/www-project-developer-guide/) (source actuelle recommandée) et le [Secure Coding Practices – Quick Reference Guide v2.1](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/) (projet archivé, toujours utile en PDF). Pour le classement des risques, voir l’[OWASP Top 10](https://owasp.org/www-project-top-ten/). Ces sources font foi en cas de divergence avec les exemples ci-dessous.
+
 - **Clés et secrets dans `.env` et `.gitignore`.**  
   *Description :* Stocker les configurations sensibles (clés API, identifiants DB) hors du code source. *Pourquoi :* Empêcher fuite de mots de passe ou API keys publiques. *Actions :* Exemple `.env` :  
   ```dotenv
@@ -283,8 +285,8 @@ Ce document est une **checklist détaillée et structurée** de bonnes pratiques
 - **Alt vide pour images décoratives**.  
   *Description :* Si l’image est purement décorative, utiliser `alt=""`. *Pourquoi :* Les lecteurs d’écran sauront l’ignorer (pas d’info inutile). *Actions :* Exemple : `<img src="ornement.svg" alt="">`. *Critères :* Les images de design n’ont pas de texte alternatif informatif. *Métriques :* Aucune image décorative n’est lue par assistive tech.
 
-- **Contraste du texte élevé (WCAG 2.2)**.  
-  *Description :* Respecter les ratios de contraste WCAG AA : au moins 4.5:1 pour texte normal (3:1 pour texte large). *Pourquoi :* Assurer lisibilité pour malvoyants. *Actions :* Vérifier chaque couleur de texte/fond avec un outil (ex. https://webaim.org/resources/contrastchecker/). *Critères :* Tous les textes critiques passent le test 4.5:1. *Métriques :* Scores d’accessibilité (audit automatisé et revue manuelle).
+- **Contraste du texte élevé (WCAG 2.2 / RGAA 4.1.2)**.  
+  *Description :* Respecter les ratios de contraste : au moins 4.5:1 pour texte normal (3:1 pour texte large). C’est une exigence WCAG AA **et** du RGAA (critère 1.2). *Pourquoi :* Assurer lisibilité pour malvoyants ; obligation légale pour les sites publics et services français. *Actions :* Vérifier chaque couleur de texte/fond avec un outil (ex. https://webaim.org/resources/contrastchecker/). *Critères :* Tous les textes critiques passent le test 4.5:1. *Métriques :* Scores d’accessibilité (audit automatisé et revue manuelle).
 
 - **Structure sémantique (titres logiques)**.  
   *Description :* Utiliser `<h1>` puis `<h2>`, etc. *Pourquoi :* Aider les utilisateurs et moteurs à comprendre la hiérarchie. *Actions :* Contrôler l’ordre des headings. *Critères :* Chaque page a un `<h1>` unique, les titres suivent l’ordre logique. *Métriques :* Audit d’accessibilité (ex. WAVE).
@@ -306,8 +308,8 @@ Ce document est une **checklist détaillée et structurée** de bonnes pratiques
 - **Messages d’erreur accessibles**.  
   *Description :* Afficher un message clair et programmatique (ARIA) lors d’erreur de saisie. *Pourquoi :* L’utilisateur comprend l’erreur et corrige. *Actions :* Ex : `<span id="emailError" role="alert">Email invalide</span>` associé au champ. *Critères :* Les erreurs ont un label audible et visible. *Métriques :* Test de formulaire (submit sans email).
 
-- **WCAG comme référence**.  
-  *Description :* Viser la conformité WCAG 2.2 niveau AA (contraste, tailles, etc.). *Pourquoi :* Norme d’accessibilité recommandée internationalement. *Actions :* Contrôler la conformité via des outils (ex. axe). *Critères :* 0 erreurs critiques d’accessibilité. *Métriques :* Score WCAG.
+- **WCAG 2.2 et RGAA 4 comme références**.  
+  *Description :* Viser la conformité WCAG 2.2 niveau AA (international) et, pour les sites publics ou français, le **RGAA 4.1** (référentiel français, aligné sur les WCAG). Les critères RGAA applicables incluent : 1.2 (contraste), 3.2 (titres), 4.1 (alternatives aux images), 6.1 (liens), 8.3 (formulaires), 11.1 (scripts). *Pourquoi :* Normes d’accessibilité recommandées internationalement (WCAG) et exigées légalement en France pour le secteur public (RGAA). *Actions :* Contrôler la conformité via des outils (ex. axe, Asqatas) **et** un audit manuel — un audit automatisé ne prouve pas la conformité. *Critères :* 0 erreur critique d’accessibilité ; pour le RGAA : taux de conformité mesuré selon la méthode officielle (échantillon de pages). *Métriques :* Score WCAG (axe) et taux de conformité RGAA si applicable. *Limite :* seule une référence par un professionnel ou un audit complet permet d’affirmer une conformité.
 
 - **Contenus intelligibles par IA**.  
   *Description :* Structurer le contenu (JSON-LD pour données, sitemaps) pour que les moteurs/assistants l’interprètent. *Pourquoi :* Améliorer SEO et accès aux données publiques. *Actions :* Ajouter un sitemap.xml à la racine, structurer les données (schema.org) pour le produit, l’article, etc. *Critères :* Google Search Console valide le sitemap. *Métriques :* Présence des rich snippets dans les résultats de recherche.
@@ -414,11 +416,16 @@ Ce document est une **checklist détaillée et structurée** de bonnes pratiques
 
 # 9. Priorisation (P0–P3) par projet
 
-Nous classons chaque tâche en **priorité** P0–P3 :
-- **P0** (critique) : sécurité, intégrité des données, et conformité légale de base (auth, paiement, protection des infos).  
-- **P1** (fiabilité) : gestion des erreurs, backups, performance de base, accessibilité minimale.  
-- **P2** (optimisation) : cache, index, code stable, tests avancés, accessibilité complète.  
-- **P3** (finitions) : design et contenus, branding, pages statiques (favicon, robots.txt), docs.  
+Nous classons chaque tâche en **priorité** P0–P3. Chaque niveau a une **sémantique opérationnelle** : il déclenche une action particulière, pas seulement un étiquetage.
+
+| Niveau | Définition | Ce qu’il déclenche | Exemples |
+|:------:|------------|--------------------|----------|
+| **P0** — Critique | Sécurité, intégrité des données, ou conformité légale de base non négociable. Un P0 ouvert empêche la mise en production (**bloquant**). | Correction **immédiate** avant tout déploiement ; validation humaine obligatoire. | Auth, autorisations, hachage des mots de passe, protection des paiements, secrets, HTTPS, notification de violation RGPD (72 h). |
+| **P1** — Fiabilité | Ce qui fait tenir le système dans la durée : erreurs, sauvegardes, performance de base, accessibilité minimale. | À traiter **avant la mise en production** sauf justification écrite et risque accepté. | Gestion des erreurs, backups/restauration testés, logs, rate limiting, index DB, Core Web Vitals, E2E des parcours critiques. |
+| **P2** — Optimisation | Qualité et confort : cache, optimisations, accessibilité complète, SEO de base. | À planifier dans les itérations suivant le lancement. | Cache, compression, contraste WCAG/RGAA, navigation clavier, images optimisées, sitemap/canonical. |
+| **P3** — Finitions | Image, branding, contenus et détails de polish. | Quand le reste est fait ; sans bloquer quoi que ce soit. | Favicon, branding, pages tuto, docs API, tests multi-navigateurs approfondis. |
+
+> **Règle de décision :** un projet avec des P0 ouverts est en **NO-GO**. Les P1 ouverts doivent être explicitement acceptés (par qui, jusqu’à quand) ; tout le reste est du backlog.
 
 L’ordre varie selon le projet :
 
