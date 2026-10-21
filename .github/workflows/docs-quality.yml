@@ -1,0 +1,49 @@
+name: Qualité de la documentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "**/*.md"
+      - ".markdownlint-cli2.jsonc"
+      - ".github/workflows/docs-quality.yml"
+  pull_request:
+    paths:
+      - "**/*.md"
+      - ".markdownlint-cli2.jsonc"
+      - ".github/workflows/docs-quality.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  markdownlint:
+    name: markdownlint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Lint Markdown
+        uses: DavidAnson/markdownlint-cli2-action@v19
+        with:
+          globs: |
+            **/*.md
+
+  lychee-links:
+    name: liens
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Vérifier les liens (liens internes et externes)
+        uses: lycheeverse/lychee-action@v2
+        with:
+          # Tous les fichiers Markdown, y compris ceux des sous-dossiers
+          args: --verbose --no-progress --exclude-mail "**/*.md"
+          # L'échec d'un lien casse la CI ; les liens externes distants peuvent
+          # être momentanément indisponibles : la sortie reste consultable.
+          fail: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

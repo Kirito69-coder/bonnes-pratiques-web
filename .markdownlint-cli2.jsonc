@@ -1,0 +1,45 @@
+{
+  // Configuration markdownlint pour ce dépôt documentaire.
+  // Objectif : cohérence de style sans bruit inutile.
+  "config": {
+    "default": true,
+    // Les fichiers de ce dépôt utilisent volontairement des longueurs de ligne variées
+    // (exemples de code, tableaux larges) : désactivation des règles de longueur.
+    "MD013": false,
+    // Les titres du style « # Titre » puis « ## Section » sont cohérents.
+    "MD024": { "siblings_only": true },
+    // Les documents commencent par un H1, mais certains fichiers (fragments) peuvent différer ;
+    // on autorise les multiples H1 pour ne pas bloquer les modèles.
+    "MD025": false,
+    // Listes avec astérisque ou tiret : accepter les deux conventions présentes dans le dépôt.
+    "MD004": { "style": "consistent" },
+    // Espaces avant les marqueurs de liste (habitude Markdown «  - texte »).
+    "MD032": false,
+    "MD031": false,
+    // Les blocs de code sans langue sont parfois voulus (sorties shell génériques).
+    "MD040": false,
+    // Les liens de titre vides ne s’appliquent pas à ce dépôt.
+    "MD042": true,
+    // Autoriser le HTML en ligne (ex. `<img>`, `<input>`) qui est illustratif.
+    "MD033": { "allowed_elements": ["img", "input", "sup", "sub", "br"] },
+    // Les règles de liste imbriquées : tolérantes.
+    "MD007": { "indent": 2 },
+    // Le dépôt contient des exemples front matter YAML dans la skill.
+    "MD041": false,
+    // Tables écrites à la main avec alignement visuel : désactivation de la règle
+    // récente et très bruyante d'alignement strict des pipes de tableau.
+    "MD060": false,
+    // URLs et emails nus dans les textes d'exemple (ex. `contact@monsite.com`)
+    // : volontaire dans une checklist pédagogique.
+    "MD034": false
+  },
+  "globs": [
+    "**/*.md",
+    "!node_modules/**",
+    "!vendor/**"
+  ],
+  "ignores": [
+    "node_modules/**",
+    "vendor/**"
+  ]
+}

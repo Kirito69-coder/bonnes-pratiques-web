@@ -2,7 +2,6 @@
 
 > **Avertissement :** cette checklist fournit des recommandations générales et des exemples techniques. Elle ne constitue pas un avis juridique, de sécurité ou de conformité. Les obligations applicables dépendent du pays, de l’activité, de l’architecture et des données traitées.
 
-
 Ce document est une **checklist détaillée et structurée** de bonnes pratiques de développement web, destinée à garantir la fiabilité, la performance, la sécurité, l’accessibilité et la conformité légale de votre site ou application. Il couvre plusieurs types de projets (application PHP/MySQL classique, marketplace, site vitrine statique, SaaS avec paiements récurrents, API publique) et présente pour chaque point une *description concise, son importance*, des *actions concrètes*, des *exemples de code ou commandes* adaptés, ainsi que des *critères d’acceptation et des indicateurs de vérification*. Des logiques conditionnelles (“si / sinon si / sinon”) indiquent comment adapter chaque recommandation selon le type de projet. Le document inclut enfin un **workflow de déploiement** et une **timeline** en diagrammes Mermaid, ainsi que des tableaux comparatifs des tâches par priorité et par type de projet. Une checklist finale prête à copier-coller est fournie en commentaire.
 
 # 1. Performance
@@ -31,7 +30,7 @@ Ce document est une **checklist détaillée et structurée** de bonnes pratiques
   *Critères :* Réponses avec en-tête `Cache-Control`, tests via `curl -I` montrent le bon `max-age`. *Métriques :* taux de cache hit (CDN/browser), nombre de requêtes/s après mise en cache.
 
   - *Si site statique :* déployer sur CDN ou service de pages statiques (Netlify, etc.) avec invalidation par version. *Métriques :* latence moyenne pour pages statiques.  
-  - *Si SaaS/API :* configurer caches HTTP ou reverse-proxy (Varnish). 
+  - *Si SaaS/API :* configurer caches HTTP ou reverse-proxy (Varnish).
 
 - **Afficher un indicateur de chargement**.  
   *Description :* Afficher un spinner ou message (« Chargement… ») pendant les requêtes longues (API ou navigation). *Pourquoi :* Améliorer l’UX en évitant un écran blanc ou suspens total. *Actions :* En front-end, désactiver le bouton Envoyer et montrer un spinner (Bootstrap `spinner-border`, CSS). Exemple Bootstrap :  
@@ -70,7 +69,7 @@ Ce document est une **checklist détaillée et structurée** de bonnes pratiques
   *Critères :* Les listes n’affichent jamais plus que N éléments (par ex. 20). Boutons/précédent/suivant fonctionnels. *Métriques :* Nombre de requêtes/page, temps de chargement de liste.
 
 - **Ajouter des index aux colonnes fréquemment requêtées**.  
-  *Description :* Créer des index SQL sur les champs utilisés en filtres (`WHERE`) et tris (`ORDER BY`). *Pourquoi :* Accélère considérablement les SELECT sur tables volumineuses. *Actions :* MySQL : `ALTER TABLE users ADD INDEX (email);` ou `CREATE INDEX idx_users_email ON users(email);`. *Critères :* Vérifier via `EXPLAIN` que les requêtes critiques utilisent l’index. *Métriques :* Temps des requêtes avant/après, nombre de lignes scannées (`EXPLAIN`). 
+  *Description :* Créer des index SQL sur les champs utilisés en filtres (`WHERE`) et tris (`ORDER BY`). *Pourquoi :* Accélère considérablement les SELECT sur tables volumineuses. *Actions :* MySQL : `ALTER TABLE users ADD INDEX (email);` ou `CREATE INDEX idx_users_email ON users(email);`. *Critères :* Vérifier via `EXPLAIN` que les requêtes critiques utilisent l’index. *Métriques :* Temps des requêtes avant/après, nombre de lignes scannées (`EXPLAIN`).
 
 - **Limiter le poids des fichiers uploadés et compresser les ressources**.  
   *Description :* Définir une taille max pour les uploads et compresser les images/JS/CSS en production. *Pourquoi :* Éviter surcharge réseau et stockage, améliorer temps de chargement. *Actions :* En PHP (`php.ini` ou code) par ex. `$_FILES` `upload_max_filesize=5M`. En front, compress/gzip les assets (config Apache/Nginx). *Critères :* Le serveur refuse au-delà (ex. message d’erreur « Fichier trop volumineux »). *Métriques :* Bande passante utilisé, temps de transfert moyen.
@@ -232,7 +231,7 @@ Ce document est une **checklist détaillée et structurée** de bonnes pratiques
   ```  
   *Critères :* Les requêtes SQL en BDD respectent la RLS (vérifiable via Supabase dev). *Métriques :* Audit des politiques RLS.  
 
-  - *Si MySQL/PHP natif :* MySQL ne gère pas la RLS nativement. Implémenter des conditions `WHERE user_id = ?` dans chaque requête et vérifier `$userId` côté serveur à chaque accès (back-end). 
+  - *Si MySQL/PHP natif :* MySQL ne gère pas la RLS nativement. Implémenter des conditions `WHERE user_id = ?` dans chaque requête et vérifier `$userId` côté serveur à chaque accès (back-end).
 
 - **Clé publique vs clé secrète (API externes)**.  
   *Description :* Ne jamais exposer de clé secrète (ex. AWS secret, Stripe secret) dans le JavaScript ou HTML. *Pourquoi :* Une clé secrète exposée permettrait l’usurpation d’identité. *Actions :* Utiliser seulement les clés publiques côté client. Toutes les opérations sensibles passent par votre serveur. *Critères :* Revoir le code front-end pour s’assurer que seules les *public keys* y figurent. *Métriques :* Aucun secret trouvé dans le code du navigateur (outil de dev ou grep).
