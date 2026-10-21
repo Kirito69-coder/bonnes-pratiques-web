@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Lint Markdown
-        uses: DavidAnson/markdownlint-cli2-action@v19
+        uses: DavidAnson/markdownlint-cli2-action@v24
         with:
           globs: |
             **/*.md
@@ -40,10 +40,10 @@ jobs:
       - name: Vérifier les liens (liens internes et externes)
         uses: lycheeverse/lychee-action@v2
         with:
-          # Tous les fichiers Markdown, y compris ceux des sous-dossiers
-          args: --verbose --no-progress --exclude-mail "**/*.md"
-          # L'échec d'un lien casse la CI ; les liens externes distants peuvent
-          # être momentanément indisponibles : la sortie reste consultable.
+          # Tous les fichiers Markdown du dépôt (forme de glob recommandée).
+          # Retries pour absorber les indisponibilités momentanées de sites tiers.
+          args: --verbose --no-progress --exclude-mail --max-retries 3 --retry-wait-time 5 './**/*.md'
+          # L'échec d'un lien casse la CI ; la sortie du job reste consultable.
           fail: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Token GitHub pour limiter les rate limits sur les liens github.com.
+          token: ${{ secrets.GITHUB_TOKEN }}
