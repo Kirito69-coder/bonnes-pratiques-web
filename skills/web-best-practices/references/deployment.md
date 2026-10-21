@@ -1,35 +1,53 @@
-# Deployment checklist
+# Checklist déploiement
 
-This reference lists deployment and release items to verify before going live or after a deployment.
+Cette référence liste les points à vérifier avant de passer en production ou après un déploiement.
 
-## Pre-deployment
+## Écran de conditions bloquantes (no-go)
 
-- Changes and migrations reviewed.
-- Secrets confirmed to come from the target environment.
-- Tests, linters and dependency checks run.
-- Backups and restore procedure confirmed.
-- Rollback plan documented.
-- DNS, certificates and configuration changes confirmed.
+Avant toute décision de mise en ligne, vérifier qu’**aucun** de ces blocants n’est présent. Un seul suffit à stopper le déploiement :
 
-## After deployment
+- [ ] Secret, clé API ou mot de passe dans le dépôt ou exposé côté client.
+- [ ] Mots de passe non hachés, ou contrôle d’accès absent côté serveur.
+- [ ] HTTPS manquant, ou contenu mixte sur une page HTTPS.
+- [ ] Injection SQL possible (requêtes concaténées sur des données utilisateur).
+- [ ] Sauvegarde sans test de restauration récent, ou sans plan de retour arrière.
+- [ ] Données personnelles traitées sans politique de confidentialité ni base légale.
+- [ ] (E-commerce/SaaS) Flux de paiement non testé, ou clé secrète de paiement exposée.
+- [ ] Erreurs détaillées (stack traces) affichées en production.
 
-- Minimal functional checks on critical paths.
-- Logs, 4xx/5xx errors, latency and availability reviewed.
-- Payments, emails and external integrations checked where relevant.
-- Monitoring observed during the post-deployment period.
-- Rollback criteria documented and followed if needed.
+> Tout point **P0 non conforme** ou **P0 bloqué** = **NO-GO**.
 
-## Production hygiene
+## Avant le déploiement
 
-- Debug/verbose modes disabled in production where applicable.
-- Custom error pages provided for common errors (for example 404 and 500).
-- Demo markers, fake badges and placeholder content removed.
-- Favicon and custom domain configured where applicable.
+- Changements et migrations revus.
+- Secrets confirmés provenant de l’environnement cible (pas du dépôt).
+- Tests, linters et contrôles de dépendances exécutés.
+- Sauvegardes et procédure de restauration confirmées.
+- Plan de retour arrière documenté (comment, en combien de temps, qui décide).
+- Changements DNS, certificats et variables de configuration confirmés.
 
-## References
+## Après le déploiement
 
-- Project deployment workflow: `docs/workflow-deploiement.md`
+- Vérifications fonctionnelles minimales sur les parcours critiques (connexion, paiement, envoi d’email le cas échéant).
+- Logs, erreurs 4xx/5xx, latence et disponibilité revus.
+- Paiements, emails et intégrations externes contrôlés le cas échéant.
+- Supervision observée pendant la période post-déploiement.
+- Critères de retour arrière documentés et appliqués si nécessaire.
+
+## Hygiène de production
+
+- Modes debug/verbeux désactivés en production.
+- Pages d’erreur personnalisées pour les cas courants (404, 500).
+- Marqueurs de démo, badges factices et contenu placeholder supprimés.
+- Favicon et domaine personnalisé configurés le cas échéant.
+- Headers de sécurité HTTP configurés (voir `references/security.md`).
+
+## Références
+
+- Workflow de déploiement du projet : `docs/workflow-deploiement.md`
+- Modèle de rapport d’audit : `docs/modele-audit.md`
 
 ## Notes
 
-- This checklist is a generic sequence and should be adapted to the project’s risk level and architecture.
+- Cette checklist est une séquence générique : à adapter au niveau de risque et à l’architecture du projet.
+- Documenter les décisions GO/NO-GO (qui décide, sur quelle preuve, avec quels risques acceptés).
