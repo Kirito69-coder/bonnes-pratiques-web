@@ -4,7 +4,7 @@ All notable changes to this repository will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.0] - 2026-10-21
 
 ### Added
 
@@ -30,6 +30,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `docs/checklist-complete.md`: ~40 new checklist items across performance (Core Web Vitals, budget, modern images, compression, async third-party scripts, font loading), security (HTTP security headers, HttpOnly token storage, secure uploads, default accounts removal), privacy (minimisation & retention, erasure implementation, 72-hour breach notification, records of processing), accessibility (modals & focus trap, ARIA live regions, reduced motion & touch targets, skip link, captions & transcripts), and tests (E2E critical journeys, CI checks, mobile & slow-network verification).
 - Skill references rewritten in French for consistency with the rest of the repository.
 - `docs/integrations.md`: corrected OpenCode global skills path (`~/.config/opencode/skills/`), added Cursor and GitHub Copilot integration instructions, linked community skill indexes.
+- Docs CI repaired: removed the `--exclude-mail` flag (deleted in lychee 0.24), fixed the glob invocation, switched to the action `token` input, bumped `markdownlint-cli2-action` to v24, excluded `cnil.fr` from link checks (anti-bot 503).
+- Broken links fixed: RGAA references now point to `https://accessibilite.numerique.gouv.fr/` (former `numerique.gouv.fr/services/rgaa/` returned 404), Contributor Covenant FAQ URL updated to the canonical `/faq`.
+- `LICENSE`: replaced the rewritten summary with the canonical CC BY 4.0 text (SPDX) so GitHub detects it as `CC-BY-4.0`.
 
 ## [0.1.0] - 2026-10-21
 
